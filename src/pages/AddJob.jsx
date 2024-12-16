@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { AuthContext } from "../providers/AuthProvider";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const AddJob = () => {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [startDate, setStartDate] = useState(new Date());
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:9000";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
     const title = form.title.value;
@@ -14,7 +21,31 @@ const AddJob = () => {
     const deadline = startDate;
     const min_price = parseFloat(form.min_price.value);
     const max_price = parseFloat(form.max_price.value);
-    const description = form.category.value;
+    const description = form.description.value;
+
+    const formData = {
+      title,
+      buyer: { email, name: user?.displayName, photo: user?.photoURL },
+      category,
+      deadline,
+      min_price,
+      max_price,
+      description,
+      bid_count: 0,
+    };
+    // make a post request
+    try {
+      // 1. Make a post request
+      await axios.post(`${apiUrl}/add-job`, formData);
+      // 2. Reset form
+      form.reset();
+      // 3. Show toast and Navigate
+      toast.success("Data Added Successfully!!!");
+      navigate("/my-posted-jobs");
+    } catch (err) {
+      console.log(err);
+      toast.error(err.message);
+    }
   };
 
   return (
@@ -32,7 +63,7 @@ const AddJob = () => {
               </label>
               <input
                 id="job_title"
-                name="job_title"
+                name="title"
                 type="text"
                 className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-200 rounded-md  focus:border-blue-400 focus:ring-blue-300 focus:ring-opacity-40  focus:outline-none focus:ring"
               />
@@ -46,6 +77,8 @@ const AddJob = () => {
                 id="emailAddress"
                 type="email"
                 name="email"
+                defaultValue={user?.email}
+                disabled={true}
                 className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border border-gray-200 rounded-md  focus:border-blue-400 focus:ring-blue-300 focus:ring-opacity-40  focus:outline-none focus:ring"
               />
             </div>
